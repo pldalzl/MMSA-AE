@@ -1,5 +1,6 @@
 import sys
 import csv
+import json
 import logging
 
 from collections import defaultdict
@@ -19,8 +20,8 @@ tags_list = []
 mlist = []
 matrix = defaultdict(int)
 
-tags_dict = defaultdict(list)  # create dict based upon tag word from photos tag table
-photoid_dict = defaultdict(list)  # create dict based upon photo id from photos tag table
+tags_dict = defaultdict(list)
+photoid_dict = defaultdict(list)
 
 
 def create_photos_list():
@@ -28,7 +29,7 @@ def create_photos_list():
         reader = csv.reader(f, delimiter=',')
         for row in reader:
             photos_list.append(row)
-    log.info('photos_list length = ' + str(len(photos_list)))
+
 
 
 def create_photos_tags_list():
@@ -36,7 +37,8 @@ def create_photos_tags_list():
         reader = csv.reader(f, delimiter=',')
         for row in reader:
             photos_tags_list.append(row)
-    log.info('photos_tags_list length = ' + str(len(photos_tags_list)))
+
+    list.sort(photos_tags_list)
 
 
 def create_tag_list():
@@ -44,9 +46,9 @@ def create_tag_list():
         reader = csv.reader(f, delimiter=',')
         for row in reader:
             tags_list.append(row[0])
-    log.info('unsorted tags_list = ' + str(tags_list) + '\n')
+
     list.sort(tags_list)
-    log.info('sorted tags_list = ' + str(tags_list))
+
 
 
 def create_tag_matrix():
@@ -56,19 +58,13 @@ def create_tag_matrix():
     for i in tags_list:
         for j in tags_list:
             matrix[(i), (j)]
-    log.info(len(matrix))
+
 
 
 def calculate_cooccurrences():
     count = 0
-    for photoid, tag in sorted(photos_tags_list):
-        tags_dict[tag].append(photoid)
-    print tags_dict
-
-    for photoid, tag in sorted(photos_tags_list):
+    for photoid, tag in photos_tags_list:
         photoid_dict[photoid].append(tag)
-    print photoid_dict
-
     for i in tags_list:
         for j in tags_list:
             for pid in photoid_dict:
@@ -76,14 +72,13 @@ def calculate_cooccurrences():
                     break
                 elif j in photoid_dict[pid] and i in photoid_dict[pid]:
                     count = matrix[(i), (j)]
-                    count = count+1
+                    count = count + 1
                     matrix[(i), (j)] = count
                 else:
                     count = 0
 
-    print sorted(matrix)
-    foo = matrix[('sky', 'clouds')]
-    print foo
+
+
 
 def main(argv):
     # create_photos_list()
@@ -91,7 +86,8 @@ def main(argv):
     create_tag_list()
     create_tag_matrix()
     calculate_cooccurrences()
-
+    log.info(sorted(matrix.items(), key=lambda x: x[1], reverse=True))
+    print matrix.values()
 
 if __name__ == "__main__":
     main(sys.argv)
