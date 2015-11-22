@@ -1,9 +1,12 @@
 import sys
 import csv
-import json
+
 import logging
 
+import pandas as pd
+
 from collections import defaultdict
+from operator import itemgetter
 
 logging.basicConfig(filename='ae_debug.log', level=logging.DEBUG)
 log = logging.getLogger('log')
@@ -50,7 +53,6 @@ def create_tag_list():
     list.sort(tags_list)
 
 
-
 def create_tag_matrix():
     for tag_x in tags_list:
         for tag_y in tags_list:
@@ -60,34 +62,63 @@ def create_tag_matrix():
             matrix[(i), (j)]
 
 
-
 def calculate_cooccurrences():
     count = 0
     for photoid, tag in photos_tags_list:
         photoid_dict[photoid].append(tag)
-    for i in tags_list:
-        for j in tags_list:
+    for outer_tag in tags_list:
+        for inner_tag in tags_list:
             for pid in photoid_dict:
-                if j == i:
+                if inner_tag == outer_tag:
                     break
-                elif j in photoid_dict[pid] and i in photoid_dict[pid]:
-                    count = matrix[(i), (j)]
+                elif inner_tag in photoid_dict[pid] and outer_tag in photoid_dict[pid]:
+                    count = matrix[(outer_tag), (inner_tag)]
                     count = count + 1
-                    matrix[(i), (j)] = count
+                    matrix[(outer_tag), (inner_tag)] = count
                 else:
                     count = 0
 
 
+def compute_top5():
+    water_list = []
+    people_list = []
+    london_list = []
+    query_tags_dict = {'water': water_list, 'people': people_list, 'london': london_list}
+
+    for tag in query_tags_dict.keys():
+        for key in matrix.keys():
+            if key[0] == tag:
+                query_tags_dict[tag].append([key, matrix.get(key)])
+
+    water_list = sorted(water_list, key=itemgetter(1), reverse=True)[0:5]
+    people_list = sorted(people_list, key=itemgetter(1), reverse=True)[0:5]
+    london_list = sorted(london_list, key=itemgetter(1), reverse=True)[0:5]
+    results_list = [water_list, people_list, london_list]
+    log.info('Results of top 5 tags :')
+    log.info(results_list)
+
+
+def output_matrix_csv():
+    # df = pd.DataFrame(matrix.values(), index=pd.MultiIndex.from_tuples(matrix.keys(), names=[tags_list]))
+    # df = pd.DataFrame(matrix.items())
+    # df.set_index(0, inplace=True)
+    # print df
+    # df.to_csv('../data/matrix.csv', sep='\t', encoding='utf-8')
+    pass
 
 
 def main(argv):
+    result = []
     # create_photos_list()
     create_photos_tags_list()
     create_tag_list()
     create_tag_matrix()
     calculate_cooccurrences()
-    log.info(sorted(matrix.items(), key=lambda x: x[1], reverse=True))
-    print matrix.values()
+    compute_top5()
+    output_matrix_csv()
+    # log.info(sorted(matrix.items(), key=lambda x: x[1], reverse=True))
+
+
 
 if __name__ == "__main__":
     main(sys.argv)
