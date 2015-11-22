@@ -1,6 +1,6 @@
 import sys
 import csv
-
+import math
 import logging
 
 import pandas as pd
@@ -32,7 +32,6 @@ def create_photos_list():
         reader = csv.reader(f, delimiter=',')
         for row in reader:
             photos_list.append(row)
-
 
 
 def create_photos_tags_list():
@@ -77,6 +76,10 @@ def calculate_cooccurrences():
                     matrix[(outer_tag), (inner_tag)] = count
                 else:
                     count = 0
+    names = [t for t in matrix.iterkeys()]
+    print names
+    df = pd.DataFrame([item for sublist in map(lambda a: a.keys(), matrix.iterkeys()) for item in sublist], columns=tags_list)
+    print df
 
 
 def compute_top5():
@@ -97,6 +100,15 @@ def compute_top5():
     log.info('Results of top 5 tags :')
     log.info(results_list)
 
+def compute_IDF():
+    for tag_pair in matrix.iterkeys():
+        x = matrix[tag_pair]
+        num_images = len(photos_list)
+        num_tags_dict = {}
+        for image, tag in photos_tags_list:
+            num_tags_dict[image].append(tag)
+        num_tags =[]
+        idf = math.log()
 
 def output_matrix_csv():
     # df = pd.DataFrame(matrix.values(), index=pd.MultiIndex.from_tuples(matrix.keys(), names=[tags_list]))
@@ -109,7 +121,7 @@ def output_matrix_csv():
 
 def main(argv):
     result = []
-    # create_photos_list()
+    create_photos_list()
     create_photos_tags_list()
     create_tag_list()
     create_tag_matrix()
